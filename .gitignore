@@ -1,0 +1,6 @@
+/.gradle
+/.idea
+/build
+/out
+/metastore_db
+derby.log

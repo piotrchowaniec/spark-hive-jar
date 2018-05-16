@@ -1,0 +1,95 @@
+plugins {
+    id 'groovy'
+    id 'application'
+    id 'distribution'
+    id 'io.spring.dependency-management' version '1.0.4.RELEASE'
+    id 'org.springframework.boot' version '1.5.10.RELEASE'
+    id 'com.gorylenko.gradle-git-properties' version '1.4.17'
+}
+
+applicationName = rootProject.name
+mainClassName = 'org.springframework.boot.loader.PropertiesLauncher'
+applicationDefaultJvmArgs = ["-Dloader.main=info.fingo.etl.EtlApplication",
+                             "-Dloader.path=plugins,drivers"]
+
+group 'com.example'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    versions = [
+            springBoot  : '1.5.10.RELEASE',
+
+            hibernate   : '5.2.13.Final',
+            hiveJDBC    : '1.2.1.spark2',
+            spark       : '2.3.0',
+            janino      : '3.0.8'   // required by Spark
+    ]
+}
+
+springBoot {
+    buildInfo()
+}
+
+bootRepackage {
+    enabled = true
+    executable = true
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:${versions.springBoot}")
+    }
+}
+
+dependencies {
+
+    // Common
+    compile("org.springframework.boot:spring-boot-starter")
+    compile("org.springframework.boot:spring-boot-starter-web")
+    compile("org.springframework.boot:spring-boot-starter-actuator")
+    runtime("org.springframework.boot:spring-boot-loader")
+
+    //Spark
+    compile("org.apache.spark:spark-core_2.11:${versions.spark}")
+    compile("org.apache.spark:spark-sql_2.11:${versions.spark}")
+    compile("org.apache.spark:spark-hive-thriftserver_2.11:${versions.spark}")
+    runtime("org.apache.spark:spark-hive_2.11:${versions.spark}")
+
+    // Tests
+    compile("org.springframework.boot:spring-boot-starter-test")
+}
+
+configurations {
+    compile {
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+        exclude group: 'org.slf4j', module: 'log4j-over-slf4j'
+    }
+
+    all {
+        resolutionStrategy {
+            force "org.apache.hadoop:hadoop-client:2.7.2"
+            dependencySubstitution {
+                substitute module("org.codehaus.janino:janino") with module("org.codehaus.janino:janino:${versions.janino}")
+            }
+        }
+    }
+}
+
+jar {
+    doFirst {
+        manifest {
+            attributes('Class-Path': configurations.runtime.collect { it.getName() }.join(' '))
+            attributes('Premain-Class': 'org.datanucleus.enhancer.DataNucleusClassFileTransformer')
+            attributes('Bundle-SymbolicName': 'org.datanucleus;singleton:=true')
+        }
+    }
+}
+
+
