@@ -60,6 +60,7 @@ dependencies {
     compile("org.apache.spark:spark-core_2.11:${versions.spark}")
     compile("org.apache.spark:spark-sql_2.11:${versions.spark}")
     compile("org.apache.spark:spark-hive-thriftserver_2.11:${versions.spark}")
+    compile files("datanucleus-core-3.2.13.1.jar")
     runtime("org.apache.spark:spark-hive_2.11:${versions.spark}")
 
     // Tests
